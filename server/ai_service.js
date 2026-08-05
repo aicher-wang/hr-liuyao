@@ -1,12 +1,59 @@
 /**
  * AI 解卦服务 - 只使用普通字符串，避免模板转义问题
+ *
+ * 优化点：
+ *   1. AI 调用 15 秒超时 + 1 次重试
+ *   2. 错误信息脱敏（不向外暴露底层错误）
+ *   3. 简单内存缓存（同一卦象+问题 5 分钟内复用）
  */
 const DEFAULT_MODEL = 'deepseek-v4-flash';
 
-async function callAI(messages, options) {
+// ===== 内存缓存 =====
+const cache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 分钟
+const CACHE_MAX_SIZE = 500;
+const CACHE_CLEAN_BATCH = 100;
+
+function getCacheKey(bagua, question) {
+  var q = (question || '').trim();
+  var name = bagua && bagua.benGua ? bagua.benGua.name : '';
+  var dong = bagua && bagua.dongYao ? bagua.dongYao.join(',') : '';
+  return q + '|' + name + '|' + dong;
+}
+
+function getCached(bagua, question) {
+  var key = getCacheKey(bagua, question);
+  var entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCached(bagua, question, value) {
+  var key = getCacheKey(bagua, question);
+  cache.set(key, { value: value, ts: Date.now() });
+  // 简单防溢出：超限时批量删除最旧的条目
+  if (cache.size > CACHE_MAX_SIZE) {
+    var entries = [];
+    cache.forEach(function(v, k) {
+      entries.push({ key: k, ts: v.ts });
+    });
+    entries.sort(function(a, b) { return a.ts - b.ts; });
+    var delCount = Math.min(CACHE_CLEAN_BATCH, entries.length);
+    for (var i = 0; i < delCount; i++) {
+      cache.delete(entries[i].key);
+    }
+  }
+}
+
+// ===== 底层 AI 调用（带 15 秒超时 + 1 次重试） =====
+function callAIOnce(messages, options) {
   options = options || {};
   var apiKey = options.apiKey || process.env.AI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return Promise.resolve(null);
 
   var model = options.model || process.env.AI_MODEL || DEFAULT_MODEL;
   var baseURL = (options.baseURL || process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
@@ -33,28 +80,50 @@ async function callAI(messages, options) {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey,
         'Content-Length': buf.length
-      }
+      },
+      timeout: 15000 // 15 秒超时
     }, function(res) {
       var d = '';
       res.on('data', function(c) { d += c; });
       res.on('end', function() {
         if (res.statusCode >= 400) {
-          reject(new Error(res.statusCode + ' ' + d));
+          reject(new Error('AI service returned ' + res.statusCode));
         } else {
           try {
             var j = JSON.parse(d);
             var c = j.choices && j.choices[0] && j.choices[0].message;
             resolve(c ? (c.content || '').trim() : null);
           } catch(e) {
-            reject(new Error('Parse error'));
+            reject(new Error('AI response parse error'));
           }
         }
       });
     });
-    r.on('error', reject);
+    r.on('timeout', function() {
+      r.destroy();
+      reject(new Error('AI request timeout'));
+    });
+    r.on('error', function(err) {
+      reject(new Error('AI request failed'));
+    });
     r.write(buf);
     r.end();
   });
+}
+
+async function callAI(messages, options) {
+  var lastErr = null;
+  for (var attempt = 0; attempt <= 1; attempt++) { // 1 次重试，共 2 次
+    try {
+      return await callAIOnce(messages, options);
+    } catch (err) {
+      lastErr = err;
+      if (attempt === 0) {
+        console.log('[AI] 第 1 次调用失败，准备重试:', err.message);
+      }
+    }
+  }
+  throw lastErr;
 }
 
 function buildText(bagua, question) {
@@ -94,12 +163,20 @@ function buildText(bagua, question) {
   return t;
 }
 
-// ===== 初始解卦 =====
+// ===== 初始解卦（带缓存） =====
 async function getDivineReading(bagua, question, options) {
   options = options || {};
-  var text = buildText(bagua, question);
   var apiKey = options.apiKey || process.env.AI_API_KEY;
   if (!apiKey) return 'AI 解读需要配置 API Key。';
+
+  // 先查缓存
+  var cached = getCached(bagua, question);
+  if (cached) {
+    console.log('[Cache] 命中缓存，直接返回已缓存的解读');
+    return cached;
+  }
+
+  var text = buildText(bagua, question);
 
   var sys = '你是一位精通京房易/火珠林体系的六爻解卦师。';
 
@@ -127,19 +204,22 @@ async function getDivineReading(bagua, question, options) {
       { role: 'system', content: sys },
       { role: 'user', content: '请解读以下六爻排盘，紧扣我的问题：\n\n' + text }
     ], { temperature: 0.7, maxTokens: 4000 });
-    return result || '解读生成失败';
+    var output = result || '解读生成失败';
+    setCached(bagua, question, output);
+    return output;
   } catch (err) {
     console.error('AI reading error:', err.message);
-    return 'AI 解读出错：' + err.message;
+    return 'AI 解读服务暂时不可用，请稍后重试。';
   }
 }
 
 // ===== 追问 =====
 async function getFollowupReading(bagua, history, followup, options) {
   options = options || {};
-  var text = buildText(bagua, '');
   var apiKey = options.apiKey || process.env.AI_API_KEY;
   if (!apiKey) return 'AI 追问需要配置 API Key。';
+
+  var text = buildText(bagua, '');
 
   var sys = '你是一位六爻解卦师。用户在已有解读基础上继续追问。';
   sys += '规则：基于同一卦象，不重复已有内容，从追问角度深入分析。';
@@ -162,7 +242,7 @@ async function getFollowupReading(bagua, history, followup, options) {
     return result || '追问回复失败';
   } catch (err) {
     console.error('Followup error:', err.message);
-    return '追问出错：' + err.message;
+    return '追问服务暂时不可用，请稍后重试。';
   }
 }
 
@@ -189,4 +269,11 @@ async function refineQuestion(question, options) {
   }
 }
 
-module.exports = { getDivineReading, getFollowupReading, buildDivinationText: buildText, refineQuestion };
+module.exports = {
+  getDivineReading,
+  getFollowupReading,
+  buildDivinationText: buildText,
+  refineQuestion,
+  // 导出缓存供外部查看/清理（可选）
+  _cache: cache
+};

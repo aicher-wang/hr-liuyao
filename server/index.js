@@ -1,7 +1,7 @@
 /**
  * 六爻 HR 智能卦师 - 后端服务
  * 混合式对话：固定起卦 + AI 解读 + 追问
- * 
+ *
  * 环境变量：
  *   PORT       - 端口（默认 3999）
  *   AI_API_KEY  - AI API Key
@@ -19,8 +19,38 @@ const { getDivineReading, getFollowupReading, buildDivinationText, refineQuestio
 const app = express();
 const PORT = process.env.PORT || 3999;
 
+// ===== 并发请求保护 =====
+const MAX_CONCURRENT_AI_REQUESTS = 5;
+let activeAIRequests = 0;
+
+function withConcurrencyLimit(handler) {
+  return async function(req, res) {
+    if (activeAIRequests >= MAX_CONCURRENT_AI_REQUESTS) {
+      return res.status(503).json({ error: '服务器繁忙，请稍后再试' });
+    }
+    activeAIRequests++;
+    try {
+      await handler(req, res);
+    } finally {
+      activeAIRequests--;
+    }
+  };
+}
+
+// ===== Express 30 秒请求超时中间件 =====
+function requestTimeout(req, res, next) {
+  req.setTimeout(30000, function() {
+    console.error('[Timeout] 请求处理超过 30 秒:', req.originalUrl);
+    if (!res.headersSent) {
+      res.status(504).json({ error: '请求处理超时，请稍后再试' });
+    }
+  });
+  next();
+}
+
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+app.use(requestTimeout);
 app.use(express.static(path.join(__dirname, '../public'), {
   maxAge: 0,
   setHeaders: (res, path) => {
@@ -41,7 +71,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // ===== 初始起卦 + AI 解读 =====
-app.post('/api/divine', async (req, res) => {
+app.post('/api/divine', withConcurrencyLimit(async (req, res) => {
   try {
     const { question, coins } = req.body;
 
@@ -73,12 +103,12 @@ app.post('/api/divine', async (req, res) => {
 
   } catch (err) {
     console.error('Divine error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务内部错误，请稍后重试' });
   }
-});
+}));
 
 // ===== 追问 =====
-app.post('/api/divine/followup', async (req, res) => {
+app.post('/api/divine/followup', withConcurrencyLimit(async (req, res) => {
   try {
     const { bagua, history, followup } = req.body;
 
@@ -95,12 +125,12 @@ app.post('/api/divine/followup', async (req, res) => {
 
   } catch (err) {
     console.error('Followup error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务内部错误，请稍后重试' });
   }
-});
+}));
 
 // ===== 补全问题 =====
-app.post('/api/refine-question', async (req, res) => {
+app.post('/api/refine-question', withConcurrencyLimit(async (req, res) => {
   try {
     const { question } = req.body;
 
@@ -114,11 +144,11 @@ app.post('/api/refine-question', async (req, res) => {
 
   } catch (err) {
     console.error('Refine error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务内部错误，请稍后重试' });
   }
-});
+}));
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   const { ganZhi } = getDayGanZhi();
   const aiOK = !!process.env.AI_API_KEY;
   console.log(`🐾 六爻 HR 智能卦师服务启动`);
@@ -129,3 +159,6 @@ app.listen(PORT, () => {
   console.log(`         POST /api/divine/followup`);
   console.log(`         GET  /api/health`);
 });
+
+// 服务器层面也设置 30 秒超时（兜底）
+server.timeout = 30000;
