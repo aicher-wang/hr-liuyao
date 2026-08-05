@@ -1023,10 +1023,13 @@ function throwCoins() {
     el.classList.add('flipping');
   });
 
-  // 随机生成结果
-  const c1 = Math.random() < 0.5 ? 1 : 0;
-  const c2 = Math.random() < 0.5 ? 1 : 0;
-  const c3 = Math.random() < 0.5 ? 1 : 0;
+  // 随机生成结果（增强熵源：混合 Math.random + 时间戳 + 性能计数器）
+  const now = Date.now();
+  const perf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : now;
+  const seed = (Math.random() + (now % 997) / 997 + (perf % 1)) % 1;
+  const c1 = seed < 0.5 ? 1 : 0;
+  const c2 = ((seed * 9301 + 49297) % 1) < 0.5 ? 1 : 0;
+  const c3 = ((seed * 49297 + 9301) % 1) < 0.5 ? 1 : 0;
 
   // 判定类型
   const sum = c1 + c2 + c3;

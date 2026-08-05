@@ -81,7 +81,7 @@ function callAIOnce(messages, options) {
         'Authorization': 'Bearer ' + apiKey,
         'Content-Length': buf.length
       },
-      timeout: 15000 // 15 秒超时
+      timeout: 30000 // 30 秒超时（服务器网络环境需要更长时间）
     }, function(res) {
       var d = '';
       res.on('data', function(c) { d += c; });
@@ -213,8 +213,8 @@ async function getDivineReading(bagua, question, options) {
   }
 }
 
-// ===== 追问 =====
-async function getFollowupReading(bagua, history, followup, options) {
+// ===== 追问（带软限制） =====
+async function getFollowupReading(bagua, history, followup, followupCount, options) {
   options = options || {};
   var apiKey = options.apiKey || process.env.AI_API_KEY;
   if (!apiKey) return 'AI 追问需要配置 API Key。';
@@ -224,6 +224,13 @@ async function getFollowupReading(bagua, history, followup, options) {
   var sys = '你是一位六爻解卦师。用户在已有解读基础上继续追问。';
   sys += '规则：基于同一卦象，不重复已有内容，从追问角度深入分析。';
   sys += '末尾标注：以上解读基于传统六爻理论，仅供参考。';
+
+  // 软限制：根据追问次数在 prompt 中引导
+  if (followupCount >= 10) {
+    sys += '【重要】用户已追问超过10次，请在本条回复末尾温和建议："同一卦象追问次数较多，建议点击「重新起卦」获取新的卦象指引。"';
+  } else if (followupCount >= 5) {
+    sys += '【提示】用户已多次追问，如用户的问题已偏离原卦核心或需要新的情境分析，请温和建议重新起卦。';
+  }
 
   var msgs = [
     { role: 'system', content: sys },
