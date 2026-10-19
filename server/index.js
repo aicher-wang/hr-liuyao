@@ -20,6 +20,62 @@ const { getDivineReading, getFollowupReading, buildDivinationText, refineQuestio
 const app = express();
 const PORT = process.env.PORT || 3999;
 
+// ===== 来源白名单 / 限流 =====
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3998,http://127.0.0.1:3998,http://localhost:3999,http://127.0.0.1:3999,http://124.222.248.78:3999')
+  .split(',')
+  .map(function (s) { return s.trim(); })
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    return callback(null, ALLOWED_ORIGINS.indexOf(origin) !== -1);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+};
+
+// 简单内存限流（按 IP）
+var rateBuckets = new Map();
+function rateLimit(name, max, windowMs) {
+  return function (req, res, next) {
+    var ip = req.ip || req.connection.remoteAddress || 'unknown';
+    var key = name + ':' + ip;
+    var now = Date.now();
+    if (rateBuckets.size > 5000) {
+      rateBuckets.forEach(function (v, k) {
+        if (now - v.start > 300000) rateBuckets.delete(k);
+      });
+    }
+    var bucket = rateBuckets.get(key);
+    if (!bucket || now - bucket.start >= windowMs) {
+      bucket = { start: now, count: 0 };
+      rateBuckets.set(key, bucket);
+    }
+    bucket.count++;
+    if (bucket.count > max) {
+      var retry = Math.ceil((bucket.start + windowMs - now) / 1000);
+      res.set('Retry-After', String(retry));
+      return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
+    }
+    next();
+  };
+}
+
+var aiLimiter = rateLimit('ai', 10, 60000);
+
+function requireAllowedOrigin(req, res, next) {
+  var source = req.headers.origin || req.headers.referer || '';
+  var base = '';
+  try { base = new URL(source).origin; } catch (err) {}
+  if (base && ALLOWED_ORIGINS.indexOf(base) !== -1) {
+    return next();
+  }
+  return res.status(403).json({ error: 'Forbidden' });
+}
+
+app.disable('x-powered-by');
+
 // ===== 极简访问日志 =====
 const LOG_DIR = path.join(__dirname, 'logs');
 if (!fs.existsSync(LOG_DIR)) {
@@ -62,9 +118,10 @@ function requestTimeout(req, res, next) {
   next();
 }
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(requestTimeout);
+app.use('/api', rateLimit('api', 60, 60000));
 app.use(express.static(path.join(__dirname, '../public'), {
   maxAge: 0,
   setHeaders: (res, path) => {
@@ -85,7 +142,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // ===== 初始起卦 + AI 解读 =====
-app.post('/api/divine', withConcurrencyLimit(async (req, res) => {
+app.post('/api/divine', aiLimiter, requireAllowedOrigin, withConcurrencyLimit(async (req, res) => {
   try {
     const { question, coins } = req.body;
 
@@ -125,7 +182,7 @@ app.post('/api/divine', withConcurrencyLimit(async (req, res) => {
 }));
 
 // ===== 追问 =====
-app.post('/api/divine/followup', withConcurrencyLimit(async (req, res) => {
+app.post('/api/divine/followup', aiLimiter, requireAllowedOrigin, withConcurrencyLimit(async (req, res) => {
   try {
     const { bagua, history, followup } = req.body;
 
@@ -151,7 +208,7 @@ app.post('/api/divine/followup', withConcurrencyLimit(async (req, res) => {
 }));
 
 // ===== 补全问题 =====
-app.post('/api/refine-question', withConcurrencyLimit(async (req, res) => {
+app.post('/api/refine-question', aiLimiter, requireAllowedOrigin, withConcurrencyLimit(async (req, res) => {
   try {
     const { question } = req.body;
 

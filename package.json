@@ -1,6 +1,7 @@
 {
   "name": "hr-liuyao",
   "version": "1.0.0",
+  "private": true,
   "description": "> 传统六爻 × HR 实务 × AI 解卦（混合式对话）",
   "main": "index.js",
   "scripts": {
@@ -8,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
