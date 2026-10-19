@@ -1,5 +1,5 @@
 @echo off
-REM 六爻 HR 智能卦师 - 启动脚本（模板，不含真实 API Key）
+REM 观象 · 六爻问事 - 启动脚本（模板，不含真实 API Key）
 REM 复制为 start.bat 并填入你的 DeepSeek API Key 后使用
 REM
 REM 模型切换说明：

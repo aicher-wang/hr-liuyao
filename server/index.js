@@ -1,5 +1,5 @@
 /**
- * 六爻 HR 智能卦师 - 后端服务
+ * 观象 · 六爻问事 - 后端服务
  * 混合式对话：固定起卦 + AI 解读 + 追问
  *
  * 环境变量：
@@ -172,7 +172,7 @@ app.post('/api/refine-question', withConcurrencyLimit(async (req, res) => {
 const server = app.listen(PORT, () => {
   const { ganZhi } = getDayGanZhi();
   const aiOK = !!process.env.AI_API_KEY;
-  console.log(`🐾 六爻 HR 智能卦师服务启动`);
+  console.log(`🐾 观象 · 六爻问事服务启动`);
   console.log(`   地址: http://localhost:${PORT}`);
   console.log(`   今日日干支: ${ganZhi}`);
   console.log(`   AI: ${aiOK ? '已接入 ✅' : '未配置 API Key（读取本地排盘） ❌'}`);

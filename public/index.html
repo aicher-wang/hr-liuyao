@@ -3,1294 +3,232 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>六爻 HR 智能卦师</title>
-  <style>
-    /* ===== 全局 ===== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    :root {
-      --bg: #1a1a2e;
-      --bg-card: #16213e;
-      --bg-input: #0f3460;
-      --text: #e8e8e8;
-      --text-dim: #8899aa;
-      --accent: #c0392b;
-      --gold: #d4a843;
-      --gold-dim: #a07830;
-      --green: #27ae60;
-      --cyan: #2980b9;
-      --border: #2a2a4e;
-      --shadow: rgba(0,0,0,0.4);
-      --radius: 8px;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
-
-    /* ===== 布局 ===== */
-    .app-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    .header {
-      text-align: center;
-      padding: 24px 0 16px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 24px;
-    }
-
-    .header h1 {
-      font-size: 1.6em;
-      color: var(--gold);
-      letter-spacing: 2px;
-    }
-
-    .header .subtitle {
-      color: var(--text-dim);
-      font-size: 0.85em;
-      margin-top: 4px;
-    }
-
-    /* ===== 步骤指示 ===== */
-    .step-indicator {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-      margin-bottom: 24px;
-    }
-
-    .step-dot {
-      width: 32px; height: 4px;
-      border-radius: 2px;
-      background: var(--border);
-      transition: background 0.3s;
-    }
-    .step-dot.active { background: var(--gold); }
-    .step-dot.done { background: var(--green); }
-
-    /* ===== 核心原则 ===== */
-    .section {
-      background: var(--bg-card);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-    }
-
-    .section-title {
-      font-size: 1.1em;
-      color: var(--gold);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .principle-grid {
-      display: grid;
-      gap: 12px;
-    }
-
-    .principle-item {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: rgba(212, 168, 67, 0.06);
-      border-left: 3px solid var(--gold);
-    }
-    .principle-item.wrong {
-      background: rgba(192, 57, 43, 0.06);
-      border-left-color: var(--accent);
-    }
-
-    .principle-item .icon { font-size: 1.2em; }
-    .principle-item .text { font-size: 0.88em; color: var(--text-dim); }
-    .principle-item .label {
-      font-weight: 600;
-      font-size: 0.82em;
-      margin-bottom: 2px;
-    }
-    .principle-item .label.good { color: var(--green); }
-    .principle-item .label.bad { color: var(--accent); }
-
-    .examples-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .example-btn {
-      background: rgba(212, 168, 67, 0.1);
-      border: 1px solid rgba(212, 168, 67, 0.3);
-      color: var(--gold);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.82em;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .example-btn:hover {
-      background: rgba(212, 168, 67, 0.2);
-      border-color: var(--gold);
-    }
-
-    /* ===== 输入区 ===== */
-    .input-area textarea {
-      width: 100%;
-      padding: 14px 16px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-size: 0.95em;
-      resize: vertical;
-      min-height: 80px;
-      font-family: inherit;
-      transition: border-color 0.2s;
-    }
-    .input-area textarea:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-
-    .input-area .hint {
-      font-size: 0.78em;
-      color: var(--text-dim);
-      margin-top: 6px;
-      padding-left: 4px;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      padding: 10px 28px;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 0.95em;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: var(--gold);
-      color: var(--bg);
-    }
-    .btn-primary:hover:not(:disabled) {
-      background: #c49630;
-      transform: translateY(-1px);
-    }
-
-    .btn-accent {
-      background: var(--accent);
-      color: white;
-    }
-    .btn-accent:hover:not(:disabled) {
-      background: #a03020;
-    }
-
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    .btn-outline:hover:not(:disabled) {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    .btn-green {
-      background: var(--green);
-      color: white;
-    }
-    .btn-green:hover:not(:disabled) {
-      background: #1e9a50;
-    }
-
-    /* ===== 摇卦区 ===== */
-    .coin-area {
-      text-align: center;
-    }
-
-    .coin-area .question-display {
-      background: rgba(212, 168, 67, 0.08);
-      border: 1px solid rgba(212, 168, 67, 0.2);
-      border-radius: var(--radius);
-      padding: 10px 16px;
-      font-size: 0.9em;
-      margin-bottom: 20px;
-      color: var(--text-dim);
-    }
-    .coin-area .question-display strong {
-      color: var(--gold);
-    }
-
-    .coin-display {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin: 16px 0;
-      min-height: 80px;
-    }
-
-    .coin {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      border: 3px solid var(--gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.6em;
-      background: radial-gradient(circle at 35% 35%, #4a3a1a, #2a1a0a);
-      color: var(--gold);
-      transition: all 0.3s;
-      user-select: none;
-    }
-    .coin.flipping {
-      animation: coinFlip 0.6s ease-in-out;
-    }
-    .coin.result-1 { border-color: var(--gold); }  /* 背面 */
-    .coin.result-0 { border-color: #666; color: #888; background: radial-gradient(circle at 35% 35%, #333, #1a1a1a); }  /* 字面 */
-
-    @keyframes coinFlip {
-      0% { transform: rotateY(0deg); }
-      50% { transform: rotateY(720deg); }
-      100% { transform: rotateY(0deg); }
-    }
-
-    .throw-btn-area {
-      margin: 20px 0;
-    }
-
-    .throw-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 40px;
-      font-size: 1.1em;
-      border-radius: 40px;
-      cursor: pointer;
-      border: 2px solid var(--gold);
-      background: transparent;
-      color: var(--gold);
-      transition: all 0.2s;
-    }
-    .throw-btn:hover:not(:disabled) {
-      background: var(--gold);
-      color: var(--bg);
-    }
-    .throw-btn:disabled { opacity: 0.3; cursor: wait; }
-    .throw-btn.auto-shake { animation: shakeBtn 0.3s ease-in-out 3; }
-
-    @keyframes shakeBtn {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-5deg); }
-      75% { transform: rotate(5deg); }
-    }
-
-    /* 摇卦进度 */
-    .throw-progress {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin: 16px 0 8px;
-    }
-
-    .throw-slot {
-      width: 36px; height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8em;
-      background: transparent;
-      transition: all 0.3s;
-    }
-    .throw-slot.filled {
-      border-color: var(--gold);
-      background: rgba(212, 168, 67, 0.1);
-    }
-    .throw-slot.current {
-      border-color: var(--cyan);
-      box-shadow: 0 0 8px rgba(41, 128, 185, 0.3);
-    }
-    .throw-slot .slot-label {
-      font-size: 0.7em;
-      color: var(--text-dim);
-    }
-
-    .throw-result-text {
-      font-size: 0.85em;
-      color: var(--text-dim);
-      margin-top: 4px;
-    }
-
-    /* ===== 排盘图 ===== */
-    .bagua-display {
-      overflow-x: auto;
-    }
-
-    .bagua-title {
-      text-align: center;
-      font-size: 1.3em;
-      color: var(--gold);
-      margin-bottom: 4px;
-    }
-    .bagua-subtitle {
-      text-align: center;
-      font-size: 0.82em;
-      color: var(--text-dim);
-      margin-bottom: 16px;
-    }
-
-    .bagua-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82em;
-    }
-
-    .bagua-table th, .bagua-table td {
-      padding: 8px 6px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-
-    .bagua-table th {
-      background: rgba(212, 168, 67, 0.08);
-      color: var(--gold-dim);
-      font-weight: 500;
-      font-size: 0.78em;
-    }
-
-    .bagua-table .yao-cell {
-      font-size: 1.4em;
-      width: 40px;
-    }
-    .bagua-table .yang-yao { color: var(--gold); }
-    .bagua-table .yin-yao { color: var(--accent); }
-    .bagua-table .dong-yao {
-      box-shadow: inset 0 0 8px rgba(212, 168, 67, 0.4);
-    }
-
-    .bagua-table .shiying-badge {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 0.75em;
-      font-weight: 600;
-    }
-    .shiying-badge.shi {
-      background: var(--gold);
-      color: var(--bg);
-    }
-    .shiying-badge.ying {
-      background: var(--cyan);
-      color: white;
-    }
-
-    /* 本卦变卦并排 */
-    .bagua-pair {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .bagua-pair .bagua-half {
-      flex: 1;
-      min-width: 280px;
-    }
-
-    .dong-yao-info {
-      text-align: center;
-      margin-top: 16px;
-      padding: 10px;
-      background: rgba(212, 168, 67, 0.06);
-      border-radius: var(--radius);
-      font-size: 0.85em;
-      color: var(--text-dim);
-    }
-    .dong-yao-info strong { color: var(--gold); }
-
-    /* ===== AI 解读区 ===== */
-    .reading-area {
-      white-space: pre-wrap;
-      line-height: 1.8;
-      font-size: 0.9em;
-      padding: 16px;
-      background: rgba(0,0,0,0.2);
-      border-radius: var(--radius);
-      border-left: 3px solid var(--gold);
-    }
-
-    .reading-area .note {
-      color: var(--text-dim);
-      font-style: italic;
-      font-size: 0.82em;
-      margin-top: 12px;
-    }
-
-    /* ===== 追问区 ===== */
-    .followup-area {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    .followup-input-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .followup-input-row input {
-      flex: 1;
-      padding: 10px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-size: 0.9em;
-    }
-    .followup-input-row input:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-
-    .followup-history {
-      margin-top: 12px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .followup-item {
-      padding: 10px 14px;
-      border-radius: var(--radius);
-      margin-bottom: 8px;
-    }
-    .followup-item.q {
-      background: rgba(41, 128, 185, 0.08);
-      border-left: 3px solid var(--cyan);
-    }
-    .followup-item.a {
-      background: rgba(212, 168, 67, 0.06);
-      border-left: 3px solid var(--gold);
-    }
-    .followup-item .role {
-      font-size: 0.75em;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .followup-item .role.q { color: var(--cyan); }
-    .followup-item .role.a { color: var(--gold); }
-    .followup-item .content {
-      font-size: 0.88em;
-      color: var(--text-dim);
-      white-space: pre-wrap;
-    }
-
-    .restart-area {
-      text-align: center;
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    /* ===== 步骤切换 ===== */
-    .step-content { display: none; }
-    .step-content.active { display: block; }
-
-    /* ===== 加载状态 ===== */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-dim);
-    }
-
-    .loading-spinner {
-      display: inline-block;
-      width: 32px; height: 32px;
-      border: 3px solid var(--border);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 12px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== 错误提示 ===== */
-    .error-msg {
-      background: rgba(192, 57, 43, 0.1);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      color: #e74c3c;
-      font-size: 0.85em;
-      margin-bottom: 12px;
-    }
-
-    /* ===== 移动端适配 ===== */
-    @media (max-width: 640px) {
-      .app-container { padding: 12px; }
-      .section { padding: 16px; }
-      .coin { width: 48px; height: 48px; font-size: 1.2em; }
-      .bagua-table { font-size: 0.72em; }
-      .bagua-table td, .bagua-table th { padding: 4px 3px; }
-      .bagua-pair .bagua-half { min-width: 100%; }
-      .header h1 { font-size: 1.2em; }
-    }
-
-    /* ===== 弱提示 + 补全建议 ===== */
-    .weak-hint {
-      display: none;
-      padding: 10px 14px;
-      background: rgba(212, 168, 67, 0.06);
-      border: 1px solid rgba(212, 168, 67, 0.2);
-      border-radius: var(--radius);
-      font-size: 0.82em;
-      color: var(--text-dim);
-      margin-top: 8px;
-      animation: fadeIn 0.3s;
-    }
-    .weak-hint.visible { display: block; }
-
-    .refine-box {
-      display: none;
-      margin-top: 10px;
-      padding: 12px 16px;
-      background: rgba(39, 174, 96, 0.06);
-      border: 1px solid rgba(39, 174, 96, 0.25);
-      border-radius: var(--radius);
-      animation: fadeIn 0.3s;
-    }
-    .refine-box.visible { display: block; }
-
-    .refine-box .refine-label {
-      font-size: 0.78em;
-      color: var(--green);
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .refine-box .refine-text {
-      font-size: 0.92em;
-      color: var(--text);
-      line-height: 1.6;
-      margin-bottom: 8px;
-    }
-
-    .refine-box .refine-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .refine-btn {
-      padding: 4px 16px;
-      border: 1px solid var(--green);
-      background: transparent;
-      color: var(--green);
-      border-radius: 16px;
-      font-size: 0.8em;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .refine-btn:hover {
-      background: var(--green);
-      color: white;
-    }
-
-    .refine-btn.dismiss {
-      border-color: var(--text-dim);
-      color: var(--text-dim);
-    }
-    .refine-btn.dismiss:hover {
-      background: rgba(255,255,255,0.05);
-      border-color: var(--text);
-      color: var(--text);
-    }
-
-    .refine-loading {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.82em;
-      color: var(--text-dim);
-    }
-    .refine-loading .spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--green);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ===== 简介折叠 ===== */
-    .collapse-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      padding: 8px 0;
-      user-select: none;
-    }
-    .collapse-header .arrow {
-      transition: transform 0.2s;
-      font-size: 0.9em;
-      color: var(--text-dim);
-    }
-    .collapse-header .arrow.open { transform: rotate(180deg); }
-    .collapse-body { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
-    .collapse-body.open { max-height: 1000px; }
-  </style>
+  <meta name="description" content="观象 · 六爻问事。把问题放进卦里，看清它现在的样子。">
+  <title>观象 · 六爻问事</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div class="app-container" id="app">
-  <!-- 顶栏 -->
-  <div class="header">
-    <h1>⚱ 六爻卦师</h1>
-    <div class="subtitle">传统六爻 · HR 实务 · AI 解卦</div>
+  <!-- ===== 开屏：金色铜钱 ===== -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash__glow"></div>
+    <svg class="splash__coin" viewBox="0 0 420 420" role="img" aria-label="金色铜钱">
+      <defs>
+        <radialGradient id="coinGold" cx="38%" cy="30%" r="72%">
+          <stop offset="0%" stop-color="#f8e6b0"/>
+          <stop offset="42%" stop-color="#d9b968"/>
+          <stop offset="100%" stop-color="#8a6226"/>
+        </radialGradient>
+        <linearGradient id="coinRim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f2d48a"/>
+          <stop offset="50%" stop-color="#b08a3e"/>
+          <stop offset="100%" stop-color="#6b4a1a"/>
+        </linearGradient>
+        <filter id="coinShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".5"/>
+        </filter>
+      </defs>
+      <g filter="url(#coinShadow)">
+        <circle cx="210" cy="210" r="178" fill="url(#coinRim)"/>
+        <circle cx="210" cy="210" r="162" fill="url(#coinGold)" stroke="#6b4a1a" stroke-width="2"/>
+        <circle cx="210" cy="210" r="154" fill="none" stroke="#f7e2a8" stroke-width="2" opacity=".55"/>
+        <circle cx="210" cy="210" r="136" fill="none" stroke="#7a5520" stroke-width="3" opacity=".45"/>
+        <rect x="176" y="176" width="68" height="68" rx="4" fill="#1b140c" stroke="#6b4a1a" stroke-width="3"/>
+        <g fill="#5a3e14" font-family="Songti SC, STSong, SimSun, serif" font-size="34" font-weight="700" text-anchor="middle">
+          <text x="210" y="126">元</text>
+          <text x="298" y="222">亨</text>
+          <text x="210" y="326">利</text>
+          <text x="122" y="222">贞</text>
+        </g>
+        <g fill="#7a5520" opacity=".7">
+          <circle cx="210" cy="94" r="4"/>
+          <circle cx="326" cy="210" r="4"/>
+          <circle cx="210" cy="326" r="4"/>
+          <circle cx="94" cy="210" r="4"/>
+        </g>
+      </g>
+    </svg>
+    <div class="splash__text">静心，默念所问</div>
+    <button class="splash__skip" id="splashSkip" type="button">跳过</button>
   </div>
 
-  <!-- 步骤指示 -->
-  <div class="step-indicator" id="stepIndicator">
-    <div class="step-dot active" data-step="0"></div>
-    <div class="step-dot" data-step="1"></div>
-    <div class="step-dot" data-step="2"></div>
-    <div class="step-dot" data-step="3"></div>
-  </div>
+  <div class="app" id="app">
+    <!-- ===== 顶栏 ===== -->
+    <header class="topbar">
+      <div class="brand" aria-label="观象 · 六爻问事">
+        <span class="brand__mark" aria-hidden="true">☯</span>
+        <span class="brand__text">
+          <strong>观象</strong>
+          <small>六爻 · 问事 · 观变</small>
+        </span>
+      </div>
+      <button class="ghost-link" id="guideBtn" type="button">怎么问</button>
+    </header>
 
-  <!-- ===== STEP 0: 核心原则 + 输入 ===== -->
-  <div class="step-content active" id="step0">
-    <!-- 核心原则 -->
-    <div class="section">
-      <div class="section-title">🎯 核心原则</div>
-      <div class="principle-grid">
-        <div class="principle-item">
-          <div class="icon">🔍</div>
-          <div>
-            <div class="label good">问具体的问题</div>
-            <div class="text">问题越具体，卦象越清晰</div>
+    <!-- ===== 步骤 ===== -->
+    <nav class="step-indicator" id="stepIndicator" aria-label="流程">
+      <div class="step is-active" data-step="0"><span class="step__num">1</span><span>提问</span></div>
+      <div class="step" data-step="1"><span class="step__num">2</span><span>摇卦</span></div>
+      <div class="step" data-step="2"><span class="step__num">3</span><span>解卦</span></div>
+    </nav>
+
+    <main>
+      <!-- ===== STEP 0：提问 ===== -->
+      <section class="step-content is-active" id="step0">
+        <section class="card card--hero">
+          <span class="seal" aria-hidden="true">观</span>
+          <p class="eyebrow">六爻 · 问事</p>
+          <h1>把问题放进卦里，看清它现在的样子。</h1>
+          <p class="lede">六爻不替你决定，只帮你看清当下的位置、关系与变化。</p>
+        </section>
+
+        <div class="principles">
+          <article class="card card--bamboo principle">
+            <span class="seal" aria-hidden="true">问</span>
+            <h3>问具体的事</h3>
+            <p>越具体，卦象越有落点。</p>
+          </article>
+          <article class="card card--bamboo principle">
+            <span class="seal" aria-hidden="true">时</span>
+            <h3>问当下的事</h3>
+            <p>问正在发生、即将发生的事。</p>
+          </article>
+          <article class="card card--bamboo principle">
+            <span class="seal" aria-hidden="true">己</span>
+            <h3>问自己的事</h3>
+            <p>你参与其中，卦象才有参考意义。</p>
+          </article>
+        </div>
+
+        <section class="card card--bamboo card--composer">
+          <span class="seal" aria-hidden="true">问</span>
+          <div class="card__head">
+            <div>
+              <p class="eyebrow">起一卦</p>
+              <h2>你想问什么？</h2>
+            </div>
           </div>
-        </div>
-        <div class="principle-item">
-          <div class="icon">⏰</div>
-          <div>
-            <div class="label good">问当下的问题</div>
-            <div class="text">关于即将发生或正在发生的事</div>
+          <label class="sr-only" for="questionInput">你的问题</label>
+          <textarea id="questionInput" rows="4" maxlength="200" placeholder="例如：下周三的面试，我该怎么准备？"></textarea>
+          <div class="chips" id="topicChips" aria-label="话题">
+            <button class="chip" type="button" data-topic="事业">事业</button>
+            <button class="chip" type="button" data-topic="感情">感情</button>
+            <button class="chip" type="button" data-topic="人际">人际</button>
+            <button class="chip" type="button" data-topic="选择">选择</button>
+            <button class="chip" type="button" data-topic="出行">出行</button>
+            <button class="chip" type="button" data-topic="学业">学业</button>
           </div>
-        </div>
-        <div class="principle-item">
-          <div class="icon">👤</div>
-          <div>
-            <div class="label good">问与你相关的问题</div>
-            <div class="text">你参与其中，卦象才有参考意义</div>
+          <div class="examples" id="examplesRow" aria-label="示例问题"></div>
+          <div class="weak-hint" id="weakHint">这个问题比较宽泛，卦象指向可能不够清晰。</div>
+          <div class="refine-box" id="refineBox">
+            <div class="refine-box__label">建议改为更具体的问题</div>
+            <div class="refine-box__text" id="refineText"></div>
+            <div class="refine-actions">
+              <button class="btn btn--outline" id="useRefinedBtn" type="button">用这个</button>
+              <button class="btn btn--ghost" id="dismissRefineBtn" type="button">不用了</button>
+            </div>
           </div>
-        </div>
-        <div class="principle-item wrong">
-          <div class="icon">✖</div>
-          <div>
-            <div class="label bad">不适合这样问</div>
-            <div class="text">「我能不能发财？」「公司明年怎么样？」「这个人是不是好人？」</div>
+          <div class="form-error" id="formError" role="alert"></div>
+          <div class="composer__foot">
+            <span class="hint">问题越具体，卦象越清晰。</span>
+            <button class="btn btn--primary" id="startBtn" type="button">静心起卦 →</button>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="collapse-header" onclick="toggleExamples()">
-        <span style="font-size:0.82em;color:var(--text-dim)">📌 示例问题</span>
-        <span class="arrow" id="examplesArrow">▾</span>
-      </div>
-      <div class="collapse-body" id="examplesBody">
-        <div class="examples-row">
-          <button class="example-btn" onclick="setExample(0)">候选人是否有意向接受offer</button>
-          <button class="example-btn" onclick="setExample(1)">离职面谈怎么切入</button>
-          <button class="example-btn" onclick="setExample(2)">培训放在周五下午好吗</button>
-          <button class="example-btn" onclick="setExample(3)">绩效面谈要注意什么</button>
-        </div>
-      </div>
-    </div>
+        <section class="card card--bamboo card--guide" id="guide">
+          <span class="seal" aria-hidden="true">引</span>
+          <div class="card__head">
+            <h2>怎么问</h2>
+          </div>
+          <div class="guide-grid">
+            <div class="guide-col guide-col--good">
+              <h3>可以这样问</h3>
+              <ul>
+                <li>这次合作，对方会按约定推进吗？</li>
+                <li>我和他最近的关系，会不会有转机？</li>
+                <li>要不要接这个新机会？</li>
+              </ul>
+            </div>
+            <div class="guide-col guide-col--bad">
+              <h3>这些事，卦不答</h3>
+              <ul>
+                <li>我什么时候能发财？</li>
+                <li>我能不能活到九十岁？</li>
+                <li>他是不是坏人？</li>
+              </ul>
+            </div>
+          </div>
+          <p class="hint guide__note">六爻属于传统文化实践，结果仅供文化研究与自我梳理，不构成医疗、法律、投资或人生决策建议。</p>
+        </section>
+      </section>
 
-    <!-- 输入区 -->
-    <div class="section input-area">
-      <div class="section-title">📝 我的问题</div>
-      <textarea id="questionInput" placeholder="例如：候选人李明下周二面试，他是否有意向接受offer？" rows="3"></textarea>
-      <div class="weak-hint" id="weakHint">💡 这个问题比较宽泛，卦象指向可能不够清晰。</div>
-      <div class="refine-box" id="refineBox">
-        <div class="refine-label">✨ 建议改为更具体的问题</div>
-        <div class="refine-text" id="refineText"></div>
-        <div class="refine-actions">
-          <button class="refine-btn" onclick="useRefined()">✓ 用这个</button>
-          <button class="refine-btn dismiss" onclick="dismissRefine()">✕ 不用了</button>
-          <span class="refine-loading" id="refineLoading"><span class="spinner"></span> 生成中…</span>
+      <!-- ===== STEP 1：摇卦 ===== -->
+      <section class="step-content" id="step1">
+        <section class="card card--bamboo question-card">
+          <p class="eyebrow">所问之事</p>
+          <p class="question-card__text" id="coinQuestion"></p>
+        </section>
+
+        <section class="card card--bamboo coin-card">
+          <div class="coin-card__meta">
+            <span id="coinCount">第 1/6 次</span>
+            <span id="coinYao">初爻</span>
+          </div>
+          <div class="coin-display" id="coinDisplay">
+            <div class="coin" id="coin1"><span class="coin__char">?</span></div>
+            <div class="coin" id="coin2"><span class="coin__char">?</span></div>
+            <div class="coin" id="coin3"><span class="coin__char">?</span></div>
+          </div>
+          <button class="btn btn--primary btn--throw" id="throwBtn" type="button">摇一摇</button>
+          <p class="coin-card__hint">心里默念所问之事，摇六次。</p>
+          <div class="throw-progress" id="throwProgress" aria-label="摇卦进度"></div>
+          <p class="throw-result-text" id="throwResultText" aria-live="polite"></p>
+        </section>
+      </section>
+
+      <!-- ===== STEP 2：解卦 ===== -->
+      <section class="step-content" id="step2">
+        <section class="card card--bamboo result-head">
+          <span class="seal" aria-hidden="true">成</span>
+          <p class="eyebrow">卦已成</p>
+          <h1 id="resultGuaName">—</h1>
+          <p class="muted" id="resultGuaMeta"></p>
+        </section>
+
+        <div class="bagua-pair" id="baguaContainer"></div>
+        <div id="dongYaoInfo"></div>
+
+        <div class="loading" id="loadingDivine" aria-live="polite">
+          <div class="loading__spinner"></div>
+          <div>正在排盘与解读…</div>
         </div>
-      </div>
-      <div class="hint">问题越具体 → 卦象指向越明确</div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="startBtn" onclick="startDivine()">开始摇卦 →</button>
-      </div>
-    </div>
+
+        <div id="readingCards" aria-live="polite"></div>
+
+        <section class="card card--bamboo followup-area" id="followupArea" style="display:none;">
+          <span class="seal" aria-hidden="true">续</span>
+          <div class="card__head">
+            <h2>继续问</h2>
+          </div>
+          <div class="followup-input-row">
+            <input id="followupInput" type="text" maxlength="200" placeholder="基于同一卦象继续追问…" aria-label="追问">
+            <button class="btn btn--primary" id="followupBtn" type="button">追问</button>
+          </div>
+          <div class="followup-history" id="followupHistory"></div>
+        </section>
+
+        <div class="restart-area">
+          <button class="btn btn--outline" id="restartBtn" type="button">重新起卦</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>观象 · 六爻问事</p>
+      <p>传统文化实践 · 仅供文化研究与自我梳理，不构成医疗、法律、投资或人生决策建议。</p>
+    </footer>
   </div>
 
-  <!-- ===== STEP 1: 摇卦 ===== -->
-  <div class="step-content" id="step1">
-    <div class="section coin-area">
-      <div class="section-title">🪙 摇卦</div>
-      <div class="question-display">
-        所问之事：<strong id="coinQuestion"></strong>
-      </div>
-
-      <!-- 三枚铜钱 -->
-      <div class="coin-display" id="coinDisplay">
-        <div class="coin" id="coin1">?</div>
-        <div class="coin" id="coin2">?</div>
-        <div class="coin" id="coin3">?</div>
-      </div>
-
-      <div class="throw-btn-area">
-        <button class="throw-btn" id="throwBtn" onclick="throwCoins()">🎲 摇一摇</button>
-      </div>
-
-      <!-- 进度 -->
-      <div class="throw-progress" id="throwProgress"></div>
-      <div class="throw-result-text" id="throwResultText"></div>
-    </div>
-  </div>
-
-  <!-- ===== STEP 2: 排盘 ===== -->
-  <div class="step-content" id="step2">
-    <div class="section bagua-display">
-      <div class="section-title">☯ 卦象</div>
-      <div id="baguaContainer"></div>
-
-      <div id="baguaText" class="reading-area" style="margin-top:16px;"></div>
-
-      <div class="loading" id="loadingDivine">
-        <div class="loading-spinner"></div>
-        <div>正在解读卦象……</div>
-      </div>
-
-      <div id="aiReading" class="reading-area" style="margin-top:16px;display:none;"></div>
-    </div>
-
-    <!-- 追问区 -->
-    <div class="section followup-area" id="followupArea" style="display:none;">
-      <div class="section-title">💬 继续追问</div>
-      <div class="followup-input-row">
-        <input id="followupInput" placeholder="基于同一卦象继续追问……" onkeydown="if(event.key==='Enter')askFollowup()">
-        <button class="btn btn-accent" onclick="askFollowup()" id="followupBtn">追问</button>
-      </div>
-      <div class="followup-history" id="followupHistory"></div>
-    </div>
-
-    <div class="restart-area">
-      <button class="btn btn-outline" onclick="restart()">🔄 重新起卦</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ===== 状态 =====
-let state = {
-  question: '',
-  coins: [],         // 6组 [n,n,n]
-  currentThrow: 0,   // 0-5 当前摇到第几次
-  isThrowing: false,
-  bagua: null,       // 排盘数据
-  followupHistory: []
-};
-
-// 示例问题列表
-const EXAMPLES = [
-  '候选人李明下周二面试，他是否有意向接受offer？',
-  '今天下午的离职面谈，我从什么角度切入比较好？',
-  '这次培训放在周五下午，学员参与度会受影响吗？',
-  '季度绩效面谈，他对自己的评分有什么顾虑吗？'
-];
-
-// ===== 工具 =====
-function $(id) { return document.getElementById(id); }
-
-function switchStep(step) {
-  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
-  $(`step${step}`).classList.add('active');
-  document.querySelectorAll('.step-dot').forEach(d => {
-    const s = parseInt(d.dataset.step);
-    d.classList.toggle('active', s === step);
-    d.classList.toggle('done', s < step);
-  });
-}
-
-function toggleExamples() {
-  const body = $('examplesBody');
-  const arrow = $('examplesArrow');
-  const isOpen = body.classList.toggle('open');
-  arrow.classList.toggle('open', isOpen);
-}
-
-function setExample(idx) {
-  $('questionInput').value = EXAMPLES[idx];
-}
-
-// 检测问题是否太宽泛
-let lastRefined = null;
-let isRefining = false;
-
-// AI 语义判断：点击摇卦时调用
-function checkQuestionWidth() {
-  // 无前端规则，全部由 AI 语义判断
-}
-
-async function checkRefineBeforeStart() {
-  const text = $('questionInput').value.trim();
-  if (!text) { alert('请先输入问题'); return; }
-  
-  if (isRefining) return;
-  isRefining = true;
-  
-  const loading = $('refineLoading');
-  const refineBox = $('refineBox');
-  
-  loading.style.display = 'inline-flex';
-  refineBox.classList.remove('visible');
-  
-  try {
-    const res = await fetch('/api/refine-question', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: text })
-    });
-    
-    if (!res.ok) throw new Error('请求失败');
-    const data = await res.json();
-    
-    loading.style.display = 'none';
-    isRefining = false;
-    
-    // AI 认为已经够具体（原样返回），直接跳转
-    if (!data.refined || data.refined === text) {
-      proceedToDivine();
-      return;
-    }
-    
-    // AI 觉得需要补全，展示给用户
-    lastRefined = data.refined.replace(/^[「「『]*|[」」』]*$/g, '').trim();
-    $('refineText').textContent = lastRefined;
-    $('weakHint').classList.add('visible');
-    refineBox.classList.add('visible');
-    
-  } catch (err) {
-    loading.style.display = 'none';
-    isRefining = false;
-    // API 出错时直接放行
-    proceedToDivine();
-  }
-}
-
-function useRefined() {
-  if (lastRefined) {
-    $('questionInput').value = lastRefined;
-  }
-  $('refineBox').classList.remove('visible');
-  $('weakHint').classList.remove('visible');
-  lastRefined = null;
-  proceedToDivine();
-}
-
-function dismissRefine() {
-  $('refineBox').classList.remove('visible');
-  $('weakHint').classList.remove('visible');
-  lastRefined = null;
-  proceedToDivine();
-}
-
-// 标记当前是否正在起卦流程中
-let isDivining = false;
-
-// ===== 开始起卦 =====
-function startDivine() {
-  const q = $('questionInput').value.trim();
-  if (!q) { alert('请先输入问题'); return; }
-  if (isDivining) {
-    alert('你已经在起卦流程中了。如需重新起卦，请先完成或点击右上角重新开始。');
-    return;
-  }
-  if (isRefining) return;
-
-  // 先让 AI 语义判断是否太宽泛
-  checkRefineBeforeStart();
-}
-
-function proceedToDivine() {
-  const q = $('questionInput').value.trim();
-  if (!q) return;
-  if (isDivining) return;
-
-  isDivining = true;
-  state.question = q;
-  state.coins = [];
-  state.currentThrow = 0;
-  state.isThrowing = false;
-  state.followupHistory = [];
-
-  $('coinQuestion').textContent = q;
-  $('startBtn').disabled = true;
-  $('startBtn').textContent = '🔮 已开始…';
-
-  // 重置摇卦显示
-  $('coin1').textContent = '?';
-  $('coin1').className = 'coin';
-  $('coin2').textContent = '?';
-  $('coin2').className = 'coin';
-  $('coin3').textContent = '?';
-  $('coin3').className = 'coin';
-  $('throwBtn').disabled = false;
-  $('throwBtn').textContent = '🎲 第1/6次';
-  $('throwResultText').textContent = '';
-  initProgress();
-
-  switchStep(1);
-}
-
-// ===== 摇卦进度条 =====
-function initProgress() {
-  const container = $('throwProgress');
-  container.innerHTML = '';
-  for (let i = 0; i < 6; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'throw-slot' + (i === 0 ? ' current' : '');
-    slot.dataset.idx = i;
-    slot.innerHTML = `<span class="slot-label">${6-i}爻</span>`;
-    container.appendChild(slot);
-  }
-}
-
-function updateProgress(idx, result) {
-  const slots = $('throwProgress').querySelectorAll('.throw-slot');
-  slots.forEach((s, i) => {
-    s.classList.remove('current', 'filled');
-    if (i < idx) {
-      s.classList.add('filled');
-      // 填入结果
-      s.innerHTML = `<span style="color:var(--gold);font-size:1em;">${result ? result.symbol : ''}</span>`;
-    } else if (i === idx) {
-      s.classList.add('current');
-    }
-  });
-}
-
-// ===== 摇卦 =====
-function throwCoins() {
-  if (state.isThrowing) return;
-  if (state.currentThrow >= 6) {
-    finishThrows();
-    return;
-  }
-
-  state.isThrowing = true;
-  const btn = $('throwBtn');
-  btn.disabled = true;
-  btn.classList.add('auto-shake');
-
-  // 动画：铜钱翻转
-  const coins = [1, 2, 3];
-  coins.forEach(i => {
-    const el = $(`coin${i}`);
-    el.classList.add('flipping');
-  });
-
-  // 随机生成结果（增强熵源：混合 Math.random + 时间戳 + 性能计数器）
-  const now = Date.now();
-  const perf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : now;
-  const seed = (Math.random() + (now % 997) / 997 + (perf % 1)) % 1;
-  const c1 = seed < 0.5 ? 1 : 0;
-  const c2 = ((seed * 9301 + 49297) % 1) < 0.5 ? 1 : 0;
-  const c3 = ((seed * 49297 + 9301) % 1) < 0.5 ? 1 : 0;
-
-  // 判定类型
-  const sum = c1 + c2 + c3;
-  const resultTypes = {
-    3: { type: '老阳', symbol: '—○', emoji: '⚊○', label: '三背 · 老阳（变爻）' },
-    2: { type: '少阳', symbol: '—', emoji: '⚊', label: '两背一字 · 少阳' },
-    1: { type: '少阴', symbol: '- -', emoji: '⚋', label: '两字一背 · 少阴' },
-    0: { type: '老阴', symbol: '- -☓', emoji: '⚋☓', label: '三字 · 老阴（变爻）' }
-  };
-  const result = resultTypes[sum];
-
-  setTimeout(() => {
-    // 显示结果
-    coins.forEach(i => {
-      const el = $(`coin${i}`);
-      el.classList.remove('flipping');
-      const val = [c1, c2, c3][i-1];
-      el.textContent = val === 1 ? '⚊' : '⚋';
-      el.className = `coin result-${val}`;
-    });
-    btn.classList.remove('auto-shake');
-
-    // 记录
-    state.coins.push([c1, c2, c3]);
-    updateProgress(state.currentThrow, result);
-    $('throwResultText').textContent = `第${state.currentThrow + 1}次：${result.label}`;
-
-    state.currentThrow++;
-
-    if (state.currentThrow >= 6) {
-      // 全部摇完，用户需主动点击确认
-      btn.textContent = '✅ 确认卦象，开始排盘';
-      btn.disabled = false;
-      state.isThrowing = false;
-    } else {
-      btn.textContent = `🎲 第${state.currentThrow + 1}/6次`;
-      btn.disabled = false;
-      state.isThrowing = false;
-    }
-  }, 800);
-}
-
-// ===== 完成摇卦 =====
-function finishThrows() {
-  if (state.coins.length !== 6) return;
-
-  if (!confirm('确认卦象结果？\n\n起卦后此问题不可重新摇卦，如需重来请点击"重新起卦"。')) {
-    return;
-  }
-
-  isDivining = false; // 允许重新起卦，但不允许再次为同一问题起卦
-
-  // 确认按钮
-  const btn = $('throwBtn');
-  btn.disabled = true;
-  btn.textContent = '🔮 正在排盘……';
-
-  // 调用 API
-  callDivine();
-}
-
-// ===== API 调用 =====
-async function callDivine() {
-  switchStep(2);
-  $('loadingDivine').style.display = 'block';
-  $('aiReading').style.display = 'none';
-
-  try {
-    const res = await fetch('/api/divine', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: state.question,
-        coins: state.coins
-      })
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const data = await res.json();
-    state.bagua = data.bagua;
-
-    // 渲染排盘图
-    renderBagua(data.bagua);
-
-    // 显示排盘文本
-    $('baguaText').textContent = data.reading;
-
-    // 显示 AI 解读
-    $('loadingDivine').style.display = 'none';
-    if (data.aiReading) {
-      $('aiReading').innerHTML = renderMarkdown(data.aiReading);
-      $('aiReading').style.display = 'block';
-    } else {
-      // 占位提示
-      $('aiReading').style.display = 'block';
-      $('aiReading').innerHTML = '<em style="color:var(--text-dim)">AI 解读功能待接入……</em>';
-    }
-
-    // 显示追问区
-    $('followupArea').style.display = 'block';
-
-  } catch (err) {
-    $('loadingDivine').style.display = 'none';
-    $('aiReading').style.display = 'block';
-    $('aiReading').innerHTML = `❌ 排盘出错：${escapeHtml(err.message)}`;
-  }
-}
-
-// ===== 渲染排盘图 =====
-function renderBagua(bagua) {
-  const container = $('baguaContainer');
-  const bg = bagua.benGua;
-  const vg = bagua.bianGua;
-
-  const renderTable = (gua, label, isBen) => {
-    const lines = gua.lines;
-    // 按从下到上排列（初爻=1在最下面）
-    const reversed = [...lines].reverse();
-    let rows = reversed.map(l => {
-      const yaoClass = l.yao === '⚊' ? 'yang-yao' : 'yin-yao';
-      const dongClass = l.isChanging ? 'dong-yao' : '';
-      const shiyingHtml = l.shiying
-        ? `<span class="shiying-badge ${l.shiying === '世' ? 'shi' : 'ying'}">${l.shiying}</span>`
-        : '';
-      return `<tr>
-        <td>${l.position}爻</td>
-        <td class="yao-cell ${yaoClass} ${dongClass}">${l.yao}${l.isChanging ? (l.type === '老阳' ? '○' : '☓') : ''}</td>
-        <td>${l.gan}${l.zhi}</td>
-        <td>${l.element}</td>
-        <td>${l.liuqin}</td>
-        <td>${l.liushen}</td>
-        <td>${shiyingHtml}</td>
-      </tr>`;
-    }).join('');
-
-    return `<div class="bagua-half">
-      <div class="bagua-title">${label}：${gua.name}</div>
-      <div class="bagua-subtitle">${gua.symbol} · ${gua.palace}宫（${gua.element}）</div>
-      <table class="bagua-table">
-        <thead><tr>
-          <th>爻</th><th>象</th><th>干支</th><th>五行</th><th>六亲</th><th>六神</th><th>世应</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-  };
-
-  // 动爻信息
-  const dongInfo = bagua.dongYao.length > 0
-    ? `<div class="dong-yao-info">⚡ 动爻：<strong>第${bagua.dongYao.join('、第')}爻</strong> — 事物变化的关键</div>`
-    : `<div class="dong-yao-info">📌 静卦 — 无动爻，事态相对稳定</div>`;
-
-  container.innerHTML = `
-    <div class="bagua-pair">
-      ${renderTable(bg, '本卦', true)}
-      ${vg ? renderTable(vg, '变卦', false) : ''}
-    </div>
-    ${dongInfo}
-  `;
-}
-
-// ===== 追问 =====
-async function askFollowup() {
-  const input = $('followupInput');
-  const text = input.value.trim();
-  if (!text || !state.bagua) return;
-
-  const btn = $('followupBtn');
-  btn.disabled = true;
-  btn.textContent = '追问中…';
-
-  // 显示用户追问
-  state.followupHistory.push({ role: 'user', content: text });
-  renderFollowupHistory();
-  input.value = '';
-
-  try {
-    const res = await fetch('/api/divine/followup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bagua: state.bagua,
-        history: state.followupHistory.slice(0, -1).map(item => ({
-          role: item.role === 'user' ? 'user' : 'assistant',
-          content: item.content
-        })),
-        followup: text
-      })
-    });
-
-    const data = await res.json();
-    const reply = data.reply || '（追问功能待接入完成）';
-
-    state.followupHistory.push({ role: 'assistant', content: reply });
-    renderFollowupHistory();
-
-  } catch (err) {
-    state.followupHistory.push({ role: 'assistant', content: `❌ 追问出错：${err.message}` });
-    renderFollowupHistory();
-  }
-
-  btn.disabled = false;
-  btn.textContent = '追问';
-}
-
-function renderFollowupHistory() {
-  const container = $('followupHistory');
-  container.innerHTML = state.followupHistory.map(item => {
-    const isQ = item.role === 'user';
-    return `<div class="followup-item ${isQ ? 'q' : 'a'}">
-      <div class="role ${isQ ? 'q' : 'a'}">${isQ ? '你' : '卦师'}</div>
-      <div class="content">${renderMarkdown(item.content)}</div>
-    </div>`;
-  }).join('');
-  container.scrollTop = container.scrollHeight;
-}
-
-// 简易 Markdown 渲染（支持粗体、斜体、列表、标题、分隔线）
-function renderMarkdown(text) {
-  if (!text) return '';
-  let html = escapeHtml(text);
-  // 总体判断高亮框
-  html = html.replace(/\*\*📌 总体判断\*\*/g, '<div style="background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:16px 20px;margin-bottom:16px;"><div style="font-size:0.82em;color:var(--gold);font-weight:600;margin-bottom:8px;">📌 总体判断</div>');
-  // 关闭高亮框（在下一个 ## 或文件结束前）
-  html = html.replace(/\n(?=\*\*🔍|\*\*💡|---)/g, '</div>\n$1');
-  // 列表项 -> 末尾不再有
-  html = html.replace(/^\d+\.\s\*\*/gm, '<br><strong>');
-  html = html.replace(/\*\*/g, '<strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/\n---+/g, '<hr>');
-  html = html.replace(/\n/g, '<br>');
-  return html;
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// ===== 重新起卦 =====
-function restart() {
-  isDivining = false;
-  state = {
-    question: '',
-    coins: [],
-    currentThrow: 0,
-    isThrowing: false,
-    bagua: null,
-    followupHistory: []
-  };
-  $('questionInput').value = '';
-  $('startBtn').disabled = false;
-  $('startBtn').textContent = '开始摇卦 →';
-  $('followupArea').style.display = 'none';
-  $('followupHistory').innerHTML = '';
-  $('baguaContainer').innerHTML = '';
-  $('baguaText').textContent = '';
-  $('aiReading').style.display = 'none';
-  switchStep(0);
-}
-</script>
+  <script src="app.js" defer></script>
 </body>
 </html>
