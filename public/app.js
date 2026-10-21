@@ -688,9 +688,17 @@
       }
     }
 
-    lines.forEach(function (raw) {
+    lines.forEach(function (raw, idx) {
       var line = raw.trim();
       if (!line) {
+        // 空行后若仍是同类列表项，则不断开列表，否则每个 <ol> 都会从 1 重新编号
+        var next = '';
+        for (var k = idx + 1; k < lines.length; k++) {
+          if (lines[k].trim()) { next = lines[k].trim(); break; }
+        }
+        if (list === 'ul' && /^[-•]\s+/.test(next)) return;
+        if (list === 'ol' && /^\d+[.、]\s*/.test(next)) return;
+
         closeList();
         html += '<br>';
         return;
