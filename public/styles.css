@@ -1590,3 +1590,80 @@ body.is-ready #step0 .card {
     animation: none;
   }
 }
+
+/* ===== 卦辞卡（本卦/变卦原文） ===== */
+.guaci-card {
+  padding: 18px 20px;
+}
+
+.guaci-block + .guaci-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.guaci-block__head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.guaci-block__label {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--cinnabar);
+  color: var(--paper-3);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
+.guaci-block__name {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.guaci-block__symbol {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.guaci-block__text {
+  margin: 4px 0;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.guaci-block__tag {
+  display: inline-block;
+  min-width: 34px;
+  margin-right: 8px;
+  padding: 0 5px;
+  border: 1px solid rgba(176, 138, 62, 0.45);
+  border-radius: 3px;
+  color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  vertical-align: 1px;
+}
+
+@media (max-width: 640px) {
+  .guaci-card {
+    padding: 14px 16px;
+  }
+
+  .guaci-block__name {
+    font-size: 16px;
+  }
+
+  .guaci-block__text {
+    font-size: 14px;
+  }
+}

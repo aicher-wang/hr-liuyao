@@ -517,7 +517,7 @@
 
     var box = $('baguaContainer');
     if (box) {
-      box.innerHTML = renderHexCard(bg, '本卦') + (vg ? renderHexCard(vg, '变卦') : '');
+      box.innerHTML = renderGuaciCard(bg, vg) + renderHexCard(bg, '本卦') + (vg ? renderHexCard(vg, '变卦') : '');
     }
 
     var dong = $('dongYaoInfo');
@@ -531,6 +531,39 @@
         dong.innerHTML = '<div class="dong-info">静卦 — 无动爻，事态相对稳定</div>';
       }
     }
+  }
+
+  /* 卦辞卡：原文照录，不做解释 */
+  function renderGuaciCard(bg, vg) {
+    if (!bg) return '';
+
+    function block(gua, label) {
+      if (!gua) return '';
+      var head = '<div class="guaci-block__head">' +
+        '<span class="guaci-block__label">' + escapeHtml(label) + '</span>' +
+        '<span class="guaci-block__name">' + escapeHtml(gua.name || '') + '</span>' +
+        '<span class="guaci-block__symbol">' + escapeHtml(gua.symbol || '') + '</span>' +
+      '</div>';
+
+      var body = '';
+      if (gua.judgment) {
+        body += '<p class="guaci-block__text"><span class="guaci-block__tag">卦辞</span>' + escapeHtml(gua.judgment) + '</p>';
+      }
+      if (gua.greatImage) {
+        body += '<p class="guaci-block__text"><span class="guaci-block__tag">大象</span>' + escapeHtml(gua.greatImage) + '</p>';
+      }
+      if (!body) return '';
+
+      return '<div class="guaci-block">' + head + body + '</div>';
+    }
+
+    var inner = block(bg, '本卦') + block(vg, '变卦');
+    if (!inner) return '';
+
+    return '<article class="card card--bamboo guaci-card">' +
+      '<span class="seal" aria-hidden="true">辞</span>' +
+      inner +
+    '</article>';
   }
 
   function renderHexCard(gua, label) {
@@ -581,7 +614,7 @@
     }
 
     var sections = parseSections(text);
-    var sealMap = { summary: '判', analysis: '详', advice: '议', disclaimer: '免', general: '卦' };
+    var sealMap = { summary: '判', guaci: '辞', analysis: '详', advice: '议', disclaimer: '免', general: '卦' };
 
     box.innerHTML = sections.map(function (sec) {
       return '<article class="card card--bamboo card--reading' + (sec.kind === 'disclaimer' ? ' is-note' : '') + '">' +
@@ -595,18 +628,19 @@
   function parseSections(text) {
     var clean = String(text || '')
       .replace(/\r\n/g, '\n')
-      .replace(/^##\s*(总体判断|卦象详解|建议|免责)\s*$/gm, '【$1】')
-      .replace(/\*\*(总体判断|卦象详解|建议|免责)\*\*/g, '【$1】')
+      .replace(/^##\s*(总体判断|卦辞原文|卦象详解|建议|免责)\s*$/gm, '【$1】')
+      .replace(/\*\*(总体判断|卦辞原文|卦象详解|建议|免责)\*\*/g, '【$1】')
       .trim();
 
     var defs = {
       '总体判断': { title: '总体判断', kind: 'summary' },
+      '卦辞原文': { title: '卦辞原文', kind: 'guaci' },
       '卦象详解': { title: '卦象详解', kind: 'analysis' },
       '建议': { title: '建议', kind: 'advice' },
       '免责': { title: '免责', kind: 'disclaimer' }
     };
 
-    var re = /【(总体判断|卦象详解|建议|免责)】/g;
+    var re = /【(总体判断|卦辞原文|卦象详解|建议|免责)】/g;
     var matches = [];
     var m;
     while ((m = re.exec(clean)) !== null) {
