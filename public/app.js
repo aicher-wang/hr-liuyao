@@ -613,7 +613,8 @@
       return;
     }
 
-    var sections = parseSections(text);
+    // 卦辞原文已由右上角卦辞卡承载，旧缓存/偶发输出一律不渲染
+    var sections = parseSections(text).filter(function (sec) { return sec.kind !== 'guaci'; });
     var sealMap = { summary: '判', guaci: '辞', analysis: '详', advice: '议', disclaimer: '免', general: '卦' };
 
     box.innerHTML = sections.map(function (sec) {
