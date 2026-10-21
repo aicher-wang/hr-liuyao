@@ -195,15 +195,19 @@
           <p class="muted" id="resultGuaMeta"></p>
         </section>
 
-        <div class="bagua-pair" id="baguaContainer"></div>
-        <div id="dongYaoInfo"></div>
-
         <div class="loading" id="loadingDivine" aria-live="polite">
           <div class="loading__spinner"></div>
           <div>正在排盘与解读…</div>
         </div>
 
-        <div id="readingCards" aria-live="polite"></div>
+        <div class="result-layout" id="resultLayout">
+          <div class="result-col result-col--main" id="readingCards" aria-live="polite"></div>
+
+          <aside class="result-col result-col--side">
+            <div class="bagua-pair" id="baguaContainer"></div>
+            <div id="dongYaoInfo"></div>
+          </aside>
+        </div>
 
         <section class="card card--bamboo followup-area" id="followupArea" style="display:none;">
           <span class="seal" aria-hidden="true">续</span>
@@ -229,6 +233,6 @@
     </footer>
   </div>
 
-  <script src="app.js?v=20261021-1" defer></script>
+  <script src="app.js?v=20261021-2" defer></script>
 </body>
 </html>

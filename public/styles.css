@@ -1667,3 +1667,44 @@ body.is-ready #step0 .card {
     font-size: 14px;
   }
 }
+
+/* ===== 结果页双栏：左解读 / 右卦辞与排盘 ===== */
+.result-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.result-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.result-col .card,
+.result-col .bagua-pair {
+  margin-bottom: 0;
+}
+
+.result-col--side .bagua-pair {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.result-col--side .guaci-card,
+.result-col--side .hex-card {
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .result-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .result-col--side {
+    order: -1;
+  }
+}
