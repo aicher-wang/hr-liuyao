@@ -613,9 +613,12 @@
       return;
     }
 
+    // 兜底：模型偶尔把标题写成裸行「卦象详解」，补回标记，避免整段被吞进上一节
+    var normalized = text.replace(/^\s*(?:#{1,3}\s*)?卦象详解\s*$/gm, '【卦象详解】');
+
     // 卦辞原文由右侧卦辞卡承载；建议、免责不再出现在结果页（旧缓存/偶发输出同样过滤）
     var HIDDEN = { guaci: 1, advice: 1, disclaimer: 1 };
-    var sections = parseSections(text).filter(function (sec) { return !HIDDEN[sec.kind]; });
+    var sections = parseSections(normalized).filter(function (sec) { return !HIDDEN[sec.kind]; });
     var sealMap = { summary: '判', guaci: '辞', analysis: '详', advice: '议', disclaimer: '免', general: '卦' };
 
     box.innerHTML = sections.map(function (sec) {
