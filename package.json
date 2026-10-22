@@ -2,10 +2,10 @@
   "name": "hr-liuyao",
   "version": "1.0.0",
   "private": true,
-  "description": "> 传统六爻 × HR 实务 × AI 解卦（混合式对话）",
+  "description": "传统六爻 × 生活问事 × AI 解卦（混合式对话 Web 应用）",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node engine/engine.test.js"
   },
   "keywords": [],
   "author": "",
