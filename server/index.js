@@ -21,7 +21,7 @@ const app = express();
 const PORT = process.env.PORT || 3999;
 
 // ===== 来源白名单 / 限流 =====
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3998,http://127.0.0.1:3998,http://localhost:3999,http://127.0.0.1:3999,http://124.222.248.78:3999')
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3998,http://127.0.0.1:3998,http://localhost:3999,http://127.0.0.1:3999')
   .split(',')
   .map(function (s) { return s.trim(); })
   .filter(Boolean);
@@ -107,10 +107,10 @@ function withConcurrencyLimit(handler) {
   };
 }
 
-// ===== Express 30 秒请求超时中间件 =====
+// ===== Express 35 秒请求超时中间件 =====
 function requestTimeout(req, res, next) {
-  req.setTimeout(30000, function() {
-    console.error('[Timeout] 请求处理超过 30 秒:', req.originalUrl);
+  req.setTimeout(35000, function() {
+    console.error('[Timeout] 请求处理超过 35 秒:', req.originalUrl);
     if (!res.headersSent) {
       res.status(504).json({ error: '请求处理超时，请稍后再试' });
     }
@@ -151,6 +151,13 @@ app.post('/api/divine', aiLimiter, requireAllowedOrigin, withConcurrencyLimit(as
     }
     if (!coins || !Array.isArray(coins) || coins.length !== 6) {
       return res.status(400).json({ error: '需要6次摇卦结果' });
+    }
+
+    const validCoins = coins.every(function (c) {
+      return Array.isArray(c) && c.length === 3 && c.every(function (v) { return v === 0 || v === 1; });
+    });
+    if (!validCoins) {
+      return res.status(400).json({ error: '铜钱数据不合法，每次需为 3 个 0/1' });
     }
 
     // 记录访问日志（问题前20字）
@@ -238,5 +245,5 @@ const server = app.listen(PORT, () => {
   console.log(`         GET  /api/health`);
 });
 
-// 服务器层面也设置 30 秒超时（兜底）
-server.timeout = 30000;
+// 服务器层面也设置 35 秒超时（兜底）
+server.timeout = 35000;

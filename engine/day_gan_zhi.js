@@ -2,7 +2,7 @@
  * 日干支计算工具
  * 根据公历日期计算天干地支（日柱）
  * 
- * 算法：基准日 2000-01-01 = 甲子日（天干0，地支0）
+ * 算法：基准日 2000-01-01 = 戊午日（天干4，地支6）
  */
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -46,11 +46,11 @@ function getDayGanZhi(date) {
   // 计算儒略日
   const jd = gregorianToJulian(d);
   
-  // 以 2000-01-01（甲子日）为基准
-  const offset = Math.round(jd - JULIAN_2000_01_01);
+  // 以 2000-01-01（戊午日）为基准
+  const offset = Math.floor(jd - JULIAN_2000_01_01);
   
-  const ganIdx = ((offset % 10) + 10) % 10;
-  const zhiIdx = ((offset % 12) + 12) % 12;
+  const ganIdx = ((offset + 4) % 10 + 10) % 10;
+  const zhiIdx = ((offset + 6) % 12 + 12) % 12;
   
   const gan = TIAN_GAN[ganIdx];
   const zhi = DI_ZHI[zhiIdx];

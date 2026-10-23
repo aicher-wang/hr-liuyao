@@ -18,7 +18,7 @@ function getCacheKey(bagua, question) {
   var q = (question || '').trim();
   var name = bagua && bagua.benGua ? bagua.benGua.name : '';
   var dong = bagua && bagua.dongYao ? bagua.dongYao.join(',') : '';
-  return q + '|' + name + '|' + dong;
+  return q + '|' + name + '|' + dong + '|' + (bagua.dayGanZhi || '');
 }
 
 function getCached(bagua, question) {
@@ -81,7 +81,7 @@ function callAIOnce(messages, options) {
         'Authorization': 'Bearer ' + apiKey,
         'Content-Length': buf.length
       },
-      timeout: 30000 // 30 秒超时（服务器网络环境需要更长时间）
+      timeout: 12000 // 单次 12 秒，给重试留出请求总超时余量
     }, function(res) {
       var d = '';
       res.on('data', function(c) { d += c; });

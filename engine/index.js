@@ -131,7 +131,8 @@ function createDivination(coinResults, dayGanZhi) {
       greatImage: benGua.greatImage,
       lines: benGuaLines
     },
-    bianGua: bianGua ? {
+    // 无动爻为静卦，不生成变卦，避免前端重复展示同一卦。
+    bianGua: (dongYao.length && bianGua) ? {
       name: bianGua.name,
       symbol: bianGua.symbol,
       trigramTop: bianGua.trigramTop,
